@@ -102,6 +102,81 @@ resource "aws_route_table_association" "public_subnet_association-2" {
 
 
 #---------------------------------------------------------------
+# ELASTIC IP FOR NAT GATEWAY
+#---------------------------------------------------------------
+
+resource "aws_eip" "nat_eip" {
+  domain     = "vpc"
+  depends_on = [aws_internet_gateway.internet_gateway]
+
+  tags = merge(
+    var.resource_tags,
+    {
+      Name = "${var.project_name}-nat-eip"
+    }
+  )
+}
+
+
+#---------------------------------------------------------------
+# NAT GATEWAY - sits in public subnet 1
+#---------------------------------------------------------------
+
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public_subnet_1.id
+
+  tags = merge(
+    var.resource_tags,
+    {
+      Name = "${var.project_name}-nat-gw"
+    }
+  )
+
+  depends_on = [aws_internet_gateway.internet_gateway]
+}
+
+
+#---------------------------------------------------------------
+# PRIVATE SUBNETS ROUTE TABLE
+#---------------------------------------------------------------
+
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.vpc.id
+
+  tags = {
+    Name = "private-RT"
+  }
+}
+
+
+#---------------------------------------------------------------
+# ROUTE PRIVATE TRAFFIC THROUGH NAT GATEWAY
+#---------------------------------------------------------------
+
+resource "aws_route" "private_route" {
+  route_table_id         = aws_route_table.private_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
+}
+
+
+#---------------------------------------------------------------
+# ASSOCIATE PRIVATE SUBNETS TO PRIVATE ROUTE TABLE
+#---------------------------------------------------------------
+
+resource "aws_route_table_association" "private_subnet_association_1" {
+  subnet_id      = aws_subnet.private_subnet_1.id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_route_table_association" "private_subnet_association_2" {
+  subnet_id      = aws_subnet.private_subnet_2.id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+
+#---------------------------------------------------------------
 # PRIVATE SUBNETS
 #---------------------------------------------------------------
 
