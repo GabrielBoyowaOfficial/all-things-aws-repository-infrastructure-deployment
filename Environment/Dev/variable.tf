@@ -45,3 +45,37 @@ variable "dns_query_logs_bucket" {}
 
 variable "dns_resolver_query_log_name" {}
 
+#-------------------------------
+# SG AND DEPENDENCIES
+#-------------------------------
+
+variable "app_port" {
+  default = 80
+}
+
+#-------------------------------
+# ALB AND DEPENDENCIES
+#-------------------------------
+
+variable "alb_logs_bucket" {}
+
+variable "waf_logs_bucket" {}
+
+#-------------------------------
+# EC2 AND DEPENDENCIES
+#-------------------------------
+
+variable "ami_id" {}
+
+variable "instance_type" {
+  default = "t2.micro"
+}
+
+variable "key_name" {}
+
+variable "root_volume_size" {
+  default = 20
+}
+
+variable "user_data_script" {}
+
