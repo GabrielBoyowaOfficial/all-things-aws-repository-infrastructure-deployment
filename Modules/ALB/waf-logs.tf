@@ -126,19 +126,17 @@ resource "aws_cloudwatch_log_resource_policy" "waf_cloudwatch_resource_policy" {
 
 
 #---------------------------------------------------------------
-# WAF LOGGING CONFIGURATION - S3 + CloudWatch
+# WAF LOGGING CONFIGURATION - S3 only (WAFv2 supports one destination)
 #---------------------------------------------------------------
 
 resource "aws_wafv2_web_acl_logging_configuration" "waf_logging" {
   resource_arn = aws_wafv2_web_acl.alb_waf.arn
 
   log_destination_configs = [
-    aws_s3_bucket.waf_logs_bucket.arn,
-    aws_cloudwatch_log_group.waf_log_group.arn
+    aws_s3_bucket.waf_logs_bucket.arn
   ]
 
   depends_on = [
-    aws_s3_bucket_policy.waf_logs_bucket_policy_attachment,
-    aws_cloudwatch_log_resource_policy.waf_cloudwatch_resource_policy
+    aws_s3_bucket_policy.waf_logs_bucket_policy_attachment
   ]
 }
