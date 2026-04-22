@@ -18,10 +18,10 @@ A fully wired, multi-AZ AWS environment provisioned entirely through code:
 
 | Layer | Module | What it builds |
 |---|---|---|
-| Network | `VPC` | VPC, public/private/database subnets across 2 AZs, IGW, NAT Gateway, public + private route tables, VPC Flow Logs → S3 |
-| DNS Observability | `ROUTE-53` | Route53 Resolver Query Logging → S3 |
-| Storage | `S3` | Dual S3 buckets with versioning, lifecycle tiering (Standard → IA → Glacier → Deep Archive), and cross-bucket replication |
-| Security Groups | `SG` | ALB SG (HTTP/HTTPS from internet) + EC2 SG (traffic from ALB only) + RDS SG (traffic from EC2 only on db port) |
+| Network | `VPC` | VPC (DNS hostnames + support enabled), 2 public subnets, 2 private subnets, 2 DB-only private subnets across 2 AZs, Internet Gateway, NAT Gateway + Elastic IP in public subnet 1, public route table (IGW), private route table (NAT GW), VPC Flow Logs (all traffic, 60s aggregation) → S3 with account-scoped bucket policy |
+| DNS Observability | `ROUTE-53` | Route53 Resolver Query Log Config → S3 bucket, bucket policy allowing `route53resolver.amazonaws.com` to deliver logs, query log associated with VPC |
+| Storage | `S3` | 2 S3 buckets with versioning enabled, lifecycle policy on bucket 1 (STANDARD → STANDARD_IA at 30d → GLACIER at 90d → DEEP_ARCHIVE at 180d, applied to current and noncurrent versions), IAM replication role + policy, cross-bucket replication (bucket 1 → bucket 2) with delete marker replication |
+| Security Groups | `SG` | ALB SG (HTTP:80 + HTTPS:443 inbound from `0.0.0.0/0`, all egress) + EC2 SG (inbound from ALB SG on app port only, all egress) + RDS SG (inbound from EC2 SG on db port 3306 only, all egress) |
 | Load Balancing | `ALB` | Internet-facing Application Load Balancer, target group, HTTP listener, access logs → S3 |
 | WAF | `ALB` | WAFv2 Web ACL with AWS Managed Rules (Common, Known Bad Inputs, SQLi) + custom rate limiting (3,000 req/5 min) + URI size protection. Logs → S3 + CloudWatch (3-day retention) |
 | Compute | `EC2` | Auto Scaling Group (min 1, desired 2, max 6) via Launch Template — instances in private subnets, ELB health checks, encrypted gp3 volumes, registered to ALB target group |
