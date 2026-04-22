@@ -21,10 +21,11 @@ A fully wired, multi-AZ AWS environment provisioned entirely through code:
 | Network | `VPC` | VPC, public/private/database subnets across 2 AZs, IGW, NAT Gateway, public + private route tables, VPC Flow Logs → S3 |
 | DNS Observability | `ROUTE-53` | Route53 Resolver Query Logging → S3 |
 | Storage | `S3` | Dual S3 buckets with versioning, lifecycle tiering (Standard → IA → Glacier → Deep Archive), and cross-bucket replication |
-| Security Groups | `SG` | ALB security group (HTTP/HTTPS from internet) + EC2 security group (traffic from ALB only) |
+| Security Groups | `SG` | ALB SG (HTTP/HTTPS from internet) + EC2 SG (traffic from ALB only) + RDS SG (traffic from EC2 only on db port) |
 | Load Balancing | `ALB` | Internet-facing Application Load Balancer, target group, HTTP listener, access logs → S3 |
 | WAF | `ALB` | WAFv2 Web ACL with AWS Managed Rules (Common, Known Bad Inputs, SQLi) + custom rate limiting (3,000 req/5 min) + URI size protection. Logs → S3 + CloudWatch (3-day retention) |
 | Compute | `EC2` | Auto Scaling Group (min 1, desired 2, max 6) via Launch Template — instances in private subnets, ELB health checks, encrypted gp3 volumes, registered to ALB target group |
+| Database | `RDS` | Aurora MySQL cluster with 2 instances across AZs, dedicated DB subnet group, storage encrypted, 7-day backup retention — accessible from EC2 only |
 
 ---
 
@@ -34,7 +35,8 @@ A fully wired, multi-AZ AWS environment provisioned entirely through code:
 - **Outbound-only internet access** — private subnet instances reach the internet via NAT Gateway for package installs and updates, with no inbound exposure
 - **Least privilege security groups** — EC2 instances only accept traffic from the ALB security group, not the open internet
 - **WAF protection** — OWASP Top 10 coverage, SQL injection protection, Log4j/SSRF mitigation, and IP-based rate limiting out of the box
-- **Encryption at rest** — all EC2 root volumes encrypted with gp3
+- **Database isolation** — RDS Aurora instances sit in dedicated DB-only private subnets, accessible only from the EC2 security group — never from the internet or the ALB
+- **Encryption at rest** — all EC2 root volumes and Aurora storage encrypted
 - **Observability by default** — VPC Flow Logs, DNS Query Logs, ALB Access Logs, and WAF Logs all captured and retained in S3
 - **Short-lived log retention** — WAF CloudWatch logs expire after 3 days to manage cost while preserving real-time visibility
 - **Consistent tagging** — every resource carries environment, cost centre, owner, team, and repo tags for governance and cost allocation
@@ -61,7 +63,7 @@ A fully wired, multi-AZ AWS environment provisioned entirely through code:
 │   ├── SG/
 │   ├── ALB/                        # Includes WAF, WAF rules, ALB logs, WAF logs
 │   ├── EC2/                        # Launch Template + Auto Scaling Group
-│   ├── RDS/                        # Planned
+│   ├── RDS/                        # Aurora MySQL cluster + instances + subnet group
 │   ├── CLOUDFRONT/                 # Planned
 │   ├── API-GATEWAY/                # Planned
 │   ├── EFS/                        # Planned
@@ -93,8 +95,9 @@ A fully wired, multi-AZ AWS environment provisioned entirely through code:
 cd Environment/Dev
 
 # Update terraform.tfvars with your values:
-#   ami_id        — Amazon Linux 2 AMI for your region
-#   key_name      — your EC2 key pair name
+#   ami_id           — Amazon Linux 2 AMI for your region
+#   key_name         — your EC2 key pair name
+#   master_password  — Aurora DB master password
 
 terraform init
 terraform plan

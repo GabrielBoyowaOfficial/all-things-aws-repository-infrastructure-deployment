@@ -16,3 +16,7 @@ variable "vpc_id" {}
 variable "app_port" {
   default = 80
 }
+
+variable "db_port" {
+  default = 3306
+}

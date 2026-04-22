@@ -79,3 +79,19 @@ variable "root_volume_size" {
 
 variable "user_data_script" {}
 
+#-------------------------------
+# RDS AND DEPENDENCIES
+#-------------------------------
+
+variable "database_name" {}
+
+variable "master_username" {}
+
+variable "master_password" {
+  sensitive = true
+}
+
+variable "rds_instance_class" {
+  default = "db.t3.medium"
+}
+
