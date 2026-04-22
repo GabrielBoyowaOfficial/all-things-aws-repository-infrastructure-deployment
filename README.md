@@ -57,10 +57,10 @@ A fully wired, multi-AZ AWS environment provisioned entirely through code:
 │       └── version.tf
 │
 ├── Modules/
-│   ├── VPC/
-│   ├── S3/
-│   ├── ROUTE-53/
-│   ├── SG/
+│   ├── VPC/                        # VPC, subnets, IGW, NAT Gateway, flow logs
+│   ├── S3/                         # Dual buckets, versioning, lifecycle, replication
+│   ├── ROUTE-53/                   # DNS resolver query logging → S3
+│   ├── SG/                         # ALB, EC2 and RDS security groups
 │   ├── ALB/                        # Includes WAF, WAF rules, ALB logs, WAF logs
 │   ├── EC2/                        # Launch Template + Auto Scaling Group
 │   ├── RDS/                        # Aurora MySQL cluster + instances + subnet group
